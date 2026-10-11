@@ -1,8 +1,29 @@
 import "./globals.css";
+import WhatsappFab from "@/components/WhatsappFab";
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+const isLive = process.env.NEXT_PUBLIC_SITE_LIVE === "true";
 
 export const metadata = {
-  title: "Sundew Pest Control & Fumigation",
-  description: "Government-accredited fumigation and pest control across Tamil Nadu.",
+  metadataBase: new URL(siteUrl),
+  robots: isLive
+    ? { index: true, follow: true }
+    : { index: false, follow: false },
+  title: {
+    default:
+      "Sundew Pest Control & Fumigation | Government-Accredited, Tamil Nadu",
+    template: "%s | Sundew Pest Control",
+  },
+  description:
+    "DPPQS and AFAS accredited fumigation and pest control across Tamil Nadu. Export cargo, chamber, vessel and warehouse fumigation, plus household pest control.",
+  openGraph: {
+    title: "Sundew Pest Control & Fumigation",
+    description:
+      "Government-accredited fumigation and pest control, trusted for 25 years across Tamil Nadu.",
+    type: "website",
+    locale: "en_IN",
+    siteName: "Sundew Pest Control",
+  },
 };
 
 export default function RootLayout({ children }) {
@@ -15,7 +36,10 @@ export default function RootLayout({ children }) {
           rel="stylesheet"
         />
       </head>
-      <body className="bg-cream text-forest-950 font-sans">{children}</body>
+      <body className="bg-cream text-forest-950 font-sans">
+        {children}
+        <WhatsappFab />
+      </body>
     </html>
   );
 }

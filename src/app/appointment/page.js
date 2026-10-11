@@ -3,13 +3,47 @@
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { supabase } from "@/lib/supabaseClient";
+import { businessInfo } from "@/lib/BusinessInfo";
+
+function formatDateTime(iso) {
+  return new Date(iso).toLocaleString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "Asia/Kolkata",
+  });
+}
 
 export default function AppointmentPage() {
-  const [status, setStatus] = useState("confirmed"); // "confirmed" | "pending"
+  const [phone, setPhone] = useState("");
+  const [state, setState] = useState("idle"); // idle | loading | done | invalid | error
+  const [results, setResults] = useState([]);
 
-  const checkStatus = () => {
-    setStatus((prev) => (prev === "confirmed" ? "pending" : "confirmed"));
-  };
+  async function checkStatus(e) {
+    e.preventDefault();
+
+    if (phone.replace(/\D/g, "").length < 10) {
+      setState("invalid");
+      return;
+    }
+
+    setState("loading");
+    const { data, error } = await supabase.rpc("check_appointment", {
+      p_phone: phone,
+    });
+
+    if (error) {
+      console.error("check_appointment error:", error);
+      setState("error");
+      return;
+    }
+
+    setResults(data ?? []);
+    setState("done");
+  }
 
   return (
     <main>
@@ -24,57 +58,53 @@ export default function AppointmentPage() {
           Check your appointment
         </h1>
         <p className="text-forest-950/70 text-sm mb-9">
-          Enter the phone number used at booking to see your current status.
+          Enter the phone number you used when booking to see where your enquiry
+          stands.
         </p>
 
         <div className="bg-white border border-forest-950/10 rounded-2xl p-7">
-          <label className="text-xs font-semibold text-forest-950 block mb-2">
-            Registered Phone Number
-          </label>
-          <div className="flex flex-col sm:flex-row gap-2.5">
-            <input
-              type="tel"
-              defaultValue="+91 98765 43210"
-              className="flex-1 border border-forest-950/10 rounded-lg px-3.5 py-3 text-sm font-mono bg-cream"
-            />
-            <button
-              onClick={checkStatus}
-              className="bg-forest-950 text-cream font-semibold text-sm px-5.5 py-3 rounded-lg whitespace-nowrap"
-            >
-              Check Status
-            </button>
-          </div>
-          <div className="text-xs text-forest-950/60 mt-3.5">
-            Try clicking "Check Status" a few times — it toggles between a
-            confirmed and a pending example.
-          </div>
-
-          {status === "confirmed" ? (
-            <div className="mt-7 rounded-xl p-5 bg-forest-500/10 border border-forest-500/25">
-              <div className="flex items-center gap-2.5 mb-3.5">
-                <span className="font-mono text-xs uppercase tracking-wide px-3 py-1.5 rounded-full bg-forest-700 text-cream font-semibold">
-                  Confirmed
-                </span>
-                <span className="text-sm text-forest-950/60">Appointment #SDW-2841</span>
-              </div>
-              <DetailRow label="Service" value="Termite Treatment (2 BHK)" />
-              <DetailRow label="Date" value="2 Aug 2026, 10:00 AM" />
-              <DetailRow label="Technician Team" value="Team 04" />
-              <DetailRow label="Location" value="Anna Nagar, Chennai" last />
+          <form onSubmit={checkStatus}>
+            <label className="text-xs font-semibold text-forest-950 block mb-2">
+              Registered Phone Number
+            </label>
+            <div className="flex flex-col sm:flex-row gap-2.5">
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+91 98765 43210"
+                className="flex-1 border border-forest-950/10 rounded-lg px-3.5 py-3 text-sm font-mono bg-cream"
+              />
+              <button
+                type="submit"
+                disabled={state === "loading"}
+                className="bg-forest-950 text-cream font-semibold text-sm px-6 py-3 rounded-lg whitespace-nowrap disabled:opacity-60"
+              >
+                {state === "loading" ? "Checking..." : "Check Status"}
+              </button>
             </div>
-          ) : (
-            <div className="mt-7 rounded-xl p-5 bg-[#FBF3E1] border border-[#B8860B]/25">
-              <div className="flex items-center gap-2.5 mb-3.5">
-                <span className="font-mono text-xs uppercase tracking-wide px-3 py-1.5 rounded-full bg-[#B8860B] text-cream font-semibold">
-                  Pending Confirmation
-                </span>
-                <span className="text-sm text-forest-950/60">Enquiry #SDW-2905</span>
-              </div>
-              <DetailRow label="Service" value="Export Cargo Fumigation" />
-              <DetailRow label="Requested Date" value="Awaiting confirmation" />
-              <DetailRow label="Next Step" value="Callback within 24 hours" last />
+          </form>
+
+          {state === "invalid" && (
+            <p className="mt-4 text-sm text-red-700">
+              Please enter a valid 10-digit phone number.
+            </p>
+          )}
+          {state === "error" && (
+            <p className="mt-4 text-sm text-red-700">
+              Something went wrong. Please try again in a moment.
+            </p>
+          )}
+
+          {state === "done" && results.length === 0 && (
+            <div className="mt-7 rounded-xl p-5 bg-cream-dim text-sm text-forest-950/70">
+              We couldn't find an enquiry for that number. Check the number you
+              used, or contact us on WhatsApp at {businessInfo.whatsapp}.
             </div>
           )}
+
+          {state === "done" &&
+            results.map((r) => <ResultCard key={r.ref} r={r} />)}
         </div>
       </div>
 
@@ -83,15 +113,63 @@ export default function AppointmentPage() {
   );
 }
 
+function ResultCard({ r }) {
+  const confirmed = r.status === "confirmed";
+
+  return (
+    <div
+      className={`mt-7 rounded-xl p-5 border ${
+        confirmed
+          ? "bg-forest-500/10 border-forest-500/25"
+          : "bg-[#FBF3E1] border-[#B8860B]/25"
+      }`}
+    >
+      <div className="flex items-center gap-2.5 mb-3.5">
+        <span
+          className={`font-mono text-xs uppercase tracking-wide px-3 py-1.5 rounded-full text-cream font-semibold ${
+            confirmed ? "bg-forest-700" : "bg-[#B8860B]"
+          }`}
+        >
+          {confirmed ? "Confirmed" : "Pending Confirmation"}
+        </span>
+        <span className="text-sm text-forest-950/60">{r.ref}</span>
+      </div>
+
+      <DetailRow
+        label="Request"
+        value={r.type === "inspection" ? "Free Inspection" : "Service Booking"}
+      />
+      {r.service && (
+        <DetailRow
+          label="Service"
+          value={r.bhk ? `${r.service} (${r.bhk})` : r.service}
+        />
+      )}
+      <DetailRow label="Submitted" value={formatDateTime(r.created_at)} />
+      <DetailRow
+        label={confirmed ? "Scheduled visit" : "Next step"}
+        value={
+          confirmed
+            ? r.scheduled_at
+              ? formatDateTime(r.scheduled_at)
+              : "Our team will call you with the visit time"
+            : "Callback within the same day"
+        }
+        last
+      />
+    </div>
+  );
+}
+
 function DetailRow({ label, value, last }) {
   return (
     <div
-      className={`flex justify-between py-2.5 text-sm ${
+      className={`flex justify-between gap-4 py-2.5 text-sm ${
         !last ? "border-b border-black/[0.06]" : ""
       }`}
     >
       <span className="text-forest-950/60">{label}</span>
-      <span className="font-semibold text-forest-950">{value}</span>
+      <span className="font-semibold text-forest-950 text-right">{value}</span>
     </div>
   );
 }

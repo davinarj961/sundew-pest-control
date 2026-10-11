@@ -6,7 +6,9 @@ export default function Footer() {
         <div>
           <div className="flex items-center gap-2.5 mb-3.5">
             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-forest-700 to-forest-950"></div>
-            <div className="font-serif font-semibold text-lg text-cream">Sundew</div>
+            <div className="font-serif font-semibold text-lg text-cream">
+              Sundew
+            </div>
           </div>
           <p className="text-sm max-w-[280px]">
             Government &amp; AFAS accredited pest control and industrial
@@ -27,6 +29,9 @@ export default function Footer() {
         <div>
           <h5 className="text-cream text-sm font-semibold mb-3.5">Company</h5>
           <ul className="text-sm space-y-2">
+            <li>
+              <a href="/privacy">Privacy Policy</a>
+            </li>
             <li>About Us</li>
             <li>Reviews</li>
             <li>Appointment Status</li>
@@ -37,10 +42,10 @@ export default function Footer() {
         <div>
           <h5 className="text-cream text-sm font-semibold mb-3.5">Reach Us</h5>
           <ul className="text-sm space-y-2">
-  <li>{businessInfo.whatsapp}</li>
-  <li>{businessInfo.hours}</li>
-  <li>{businessInfo.location}</li>
-</ul>
+            <li>{businessInfo.whatsapp}</li>
+            <li>{businessInfo.hours}</li>
+            <li>{businessInfo.location}</li>
+          </ul>
         </div>
       </div>
 
