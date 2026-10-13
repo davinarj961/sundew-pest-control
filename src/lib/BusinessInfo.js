@@ -8,6 +8,7 @@ export const businessInfo = {
   yearsInService: 25,
   technicianCount: 15,
   serviceCount: 9,
+  warrantyMonths: 12,
   accreditations: [
     {
       code: "DPPQS · GOVT. OF INDIA",

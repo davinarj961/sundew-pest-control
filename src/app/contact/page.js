@@ -34,6 +34,21 @@ export default function ContactPage() {
       setStatus(error.message?.includes("Too many") ? "toomany" : "error");
       return;
     }
+    // Remember this phone number on this device so /appointment can show it
+    try {
+      const phone = data.get("phone");
+      const key = String(phone).replace(/\D/g, "").slice(-10);
+      const saved = JSON.parse(localStorage.getItem("sundew_phones") || "[]");
+      const others = saved.filter(
+        (p) => p.replace(/\D/g, "").slice(-10) !== key,
+      );
+      localStorage.setItem(
+        "sundew_phones",
+        JSON.stringify([phone, ...others].slice(0, 3)),
+      );
+    } catch {
+      // Storage can be blocked (private mode). The site still works without it.
+    }
 
     form.reset();
     setStatus("success");
@@ -118,7 +133,7 @@ export default function ContactPage() {
                 <input
                   name="name"
                   type="text"
-                  minlength={2}
+                  minLength={2}
                   placeholder="Enter your name"
                   className="input"
                   required
@@ -208,7 +223,7 @@ export default function ContactPage() {
 
             {status === "success" && (
               <div className="mt-4 bg-forest-500/10 border border-forest-500/25 rounded-lg px-4 py-3 text-sm text-forest-700 font-semibold text-center">
-                Thank you! We've received your enquiry and will call you back
+                Thank you! We&apos;ve received your enquiry and will call you back
                 today.
               </div>
             )}
@@ -220,13 +235,13 @@ export default function ContactPage() {
             )}
             {status === "toomany" && (
               <div className="mt-4 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700 text-center">
-                We've already received several enquiries from this number.
+                We&apos;ve already received several enquiries from this number.
                 Please wait a while, or contact us on WhatsApp.
               </div>
             )}
 
             <p className="text-center text-xs text-forest-950/60 mt-3.5">
-              You'll receive a confirmation call or WhatsApp message the same
+              You&apos;ll receive a confirmation call or WhatsApp message the same
               day. All services include a {businessInfo.warrantyMonths}-month
               warranty.
             </p>
